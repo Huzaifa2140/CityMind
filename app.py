@@ -231,7 +231,8 @@ def api_reroute():
 
 if __name__ == "__main__":
     os.makedirs("ui", exist_ok=True)
-    print("CityMind UI  →  http://localhost:5050")
-    print("Demo prep    →  http://localhost:5050/prep")
+    port = int(os.environ.get("PORT", 5050))
+    print(f"CityMind UI  →  http://localhost:{port}")
+    print(f"Demo prep    →  http://localhost:{port}/prep")
     print("Run:  python -X utf8 app.py")
-    app.run(host="0.0.0.0", port=5050, debug=False, threaded=True)
+    app.run(host="0.0.0.0", port=port, debug=False, threaded=True)
