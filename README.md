@@ -65,100 +65,23 @@ citymind/
 
 ---
 
-## Algorithms in Depth
+## Algorithms
 
-### Challenge 1 — City Layout via Min-Conflicts CSP
+| Challenge | Algorithm | File |
+|-----------|-----------|------|
+| City Layout (CSP) | Min-Conflicts local search | `solvers/min_conflicts.py` |
+| Road Network | Kruskal MST + Dijkstra (×2) | `solvers/road_network.py`, `solvers/emergency_routing.py` |
+| Ambulance Placement | Genetic Algorithm (minimax BFS) | `solvers/ambulance_placement.py` |
+| Emergency Routing | A* with risk-weighted edges | `solvers/astar.py` |
+| Risk Prediction | K-Means clustering + Gini Decision Tree | `solvers/risk_predictor.py` |
 
-**File:** `solvers/min_conflicts.py`
+**Key design decisions:**
 
-The zone assignment problem is modelled as a Constraint Satisfaction Problem (CSP). Every grid cell is a variable; its domain is the set of six zone types. Constraints enforce realistic urban planning rules:
-
-- Industrial cells may not be adjacent to Schools or Hospitals.
-- Every Residential cell must have a Hospital within 3 hops (BFS).
-- Every Power Plant must have an Industrial cell within 2 hops.
-- Exactly one Depot must exist on the entire grid.
-
-The solver uses **Min-Conflicts local search**: it initialises all cells randomly, identifies which cells violate constraints, then iteratively picks a conflicted cell and reassigns it to whichever zone type produces the fewest conflicts. This repeats until no conflicts remain or the iteration cap (`MAX_ITERATIONS_CSP = 10,000`) is hit.
-
-After a valid layout is found, a BFS from the Depot locates the nearest Hospital — these two coordinates are stored in `constants.py` and used by every downstream solver.
-
----
-
-### Challenge 2 — Road Network via Kruskal + Double Dijkstra
-
-**Files:** `solvers/road_network.py`, `solvers/emergency_routing.py`
-
-All grid cells are connected by a unit-weight orthogonal edge graph. The road network is then built in two steps:
-
-**Minimum Spanning Tree (Kruskal's algorithm)**
-All edges are sorted by weight and added greedily as long as they don't create a cycle (union-find). The result is the minimal set of roads that keeps every cell reachable — used by the UI to visualise the city's backbone.
-
-**Primary + Backup Routes (Dijkstra × 2)**
-Two independent shortest paths are computed from the Depot to the Hospital:
-- The **primary route** is the globally shortest path.
-- The **backup route** is computed after temporarily removing all edges used by the primary, guaranteeing a physically disjoint fallback if the main road is flooded.
-
----
-
-### Challenge 3 — Ambulance Placement via Genetic Algorithm
-
-**File:** `solvers/ambulance_placement.py`
-
-The goal is to place 3 ambulances on the grid so that the **worst-case BFS distance** from any populated cell to its nearest ambulance is minimised (a minimax objective). This is NP-hard at scale, so it is solved with a Genetic Algorithm.
-
-**Representation:** A chromosome is a list of 3 grid coordinates (one per ambulance).
-
-**Fitness function:** Multi-source BFS from all 3 ambulance positions simultaneously. The fitness score is the maximum BFS distance reached before all populated nodes are covered. Lower is better.
-
-**Evolutionary operators:**
-- *Selection* — binary tournament (two random individuals, keep the better one).
-- *Crossover* — per-slot uniform crossover from two parents; duplicate positions are resolved by drawing a random unused cell.
-- *Mutation* — with 15% probability, one ambulance is relocated to a random unused cell.
-- *Elitism* — the top 4 individuals carry over unchanged each generation.
-
-The GA runs for up to 500 generations and stops early after 60 consecutive generations with no improvement. At simulation step 10, risk multipliers are updated and the GA is re-run on the current graph state.
-
----
-
-### Challenge 4 — Emergency Routing via A*
-
-**File:** `solvers/astar.py`
-
-When an ambulance needs to reach a target cell, A* finds the optimal path. The heuristic is Manhattan distance. Edge traversal cost is the base edge weight multiplied by the destination cell's **risk multiplier** (set by the risk predictor), so A* naturally avoids high-risk zones when cheaper alternatives exist.
-
-If a road is flooded (`edge.is_impassable = True`), A* treats it as a missing edge. This means every flood event automatically triggers a new A* call on the active route leg — if no path exists, a `PathNotFoundError` is raised and logged as `NO_ROUTE`.
-
-The sequential routing pattern (H → S → R → I → W) picks spread-maximised targets so ambulances cover distinct parts of the city across legs.
-
----
-
-### Challenge 5 — Risk Prediction via K-Means + Decision Tree
-
-**File:** `solvers/risk_predictor.py`
-
-Every cell is classified into one of three risk tiers — **Low**, **Medium**, or **High** — which then scales A* routing costs.
-
-**Feature extraction (per cell):**
-- Normalised population count (from zone type)
-- Inverse BFS distance to the nearest Industrial cell (proximity to industry = higher risk)
-- Zone base risk score (a fixed prior per zone type)
-
-**Step 1 — K-Means clustering (k=3, stdlib only)**
-Cells are clustered in 2D feature space (population + industrial proximity). Cluster centroids are ranked by a 50/50 weighted score to assign Low / Medium / High labels.
-
-**Step 2 — Label noise injection**
-~8% of labels are nudged ±1 tier to simulate real-world label uncertainty and prevent the decision tree from being trivially exact.
-
-**Step 3 — Gini Decision Tree (max depth 6, stdlib only)**
-A binary decision tree is trained on the noisy labels. At each split, the feature and threshold that minimise weighted Gini impurity are chosen. The trained tree predicts the final risk tier for every cell, and the result is written back to the graph as `risk_label` and `risk_multiplier`.
-
-| Risk Label | A* Cost Multiplier |
-|------------|-------------------|
-| Low | 1.00× |
-| Medium | 1.25× |
-| High | 1.50× |
-
-Both K-Means and the Decision Tree are implemented entirely from scratch — no NumPy, scikit-learn, or any external ML library is used.
+- **CSP constraints** — Industrial zones cannot be adjacent to Schools or Hospitals; Residential zones must have a Hospital within 3 hops; exactly one Depot per grid.
+- **Dual routing** — A disjoint backup route is computed by removing primary-route edges before running Dijkstra a second time, guaranteeing a flood-safe fallback.
+- **GA fitness** — Multi-source BFS from all ambulance positions; score = maximum distance to the farthest populated cell (minimax). Stops after 60 stagnant generations.
+- **A* heuristic** — Manhattan distance; edge cost is scaled by the cell's risk multiplier (Low 1.0×, Medium 1.25×, High 1.50×) so the router naturally avoids danger zones.
+- **Risk pipeline** — K-Means labels cells by population density + industrial proximity; a Gini Decision Tree (depth 6) then classifies each cell. Both are built from scratch — no NumPy or scikit-learn.
 
 ---
 
