@@ -8,9 +8,10 @@ A Python simulation that applies five classical AI algorithms to model a smart c
 
 - Overview
 - Project Structure
-- Algorithms in Depth
+- Algorithms
 - How the Simulation Runs
 - Getting Started
+- Deployment
 - Configuration
 - Web API Reference
 
@@ -60,6 +61,8 @@ citymind/
 ├── main.py                 # CitySimulation class + CLI entry point
 ├── verify_build.py         # Sanity-check: graph builds correctly
 ├── verify_spread.py        # Validates spread-target selection logic
+├── Dockerfile              # Container build instructions for Cloud Run
+├── requirements.txt        # Python dependencies (flask, gunicorn)
 └── README.md
 ```
 
@@ -162,6 +165,43 @@ Open **http://localhost:5050** in your browser.
 - Use **Clear Floods** or **Reroute** to respond dynamically.
 
 The event log panel on the right shows the last 30 timestamped events live.
+
+---
+
+## Deployment
+
+The app is containerised and ready to deploy to **Google Cloud Run** for a permanent public URL.
+
+### Deploy from local machine
+
+Requires [Google Cloud SDK](https://cloud.google.com/sdk/docs/install) and a GCP project with Cloud Run enabled.
+
+```bash
+gcloud auth login
+gcloud config set project YOUR_PROJECT_ID
+cd citymind
+gcloud run deploy citymind --source . --region us-central1 --allow-unauthenticated --platform managed --clear-base-image
+```
+
+Cloud Run builds the `Dockerfile`, deploys the container, and returns a permanent URL like:
+`https://citymind-xxxx-uc.a.run.app`
+
+### Deploy from Cloud Shell (no local SDK needed)
+
+```bash
+git clone https://github.com/your-username/citymind.git
+cd citymind
+gcloud run deploy citymind --source . --region us-central1 --allow-unauthenticated --platform managed
+```
+
+### Run locally with Docker
+
+```bash
+docker build -t citymind .
+docker run -p 5050:8080 citymind
+```
+
+Then open **http://localhost:5050**.
 
 ---
 
