@@ -11,7 +11,6 @@ A Python simulation that applies five classical AI algorithms to model a smart c
 - Algorithms
 - How the Simulation Runs
 - Getting Started
-- Deployment
 - Configuration
 - Web API Reference
 
@@ -168,43 +167,6 @@ The event log panel on the right shows the last 30 timestamped events live.
 
 ---
 
-## Deployment
-
-The app is containerised and ready to deploy to **Google Cloud Run** for a permanent public URL.
-
-### Deploy from local machine
-
-Requires [Google Cloud SDK](https://cloud.google.com/sdk/docs/install) and a GCP project with Cloud Run enabled.
-
-```bash
-gcloud auth login
-gcloud config set project YOUR_PROJECT_ID
-cd citymind
-gcloud run deploy citymind --source . --region us-central1 --allow-unauthenticated --platform managed --clear-base-image
-```
-
-Cloud Run builds the `Dockerfile`, deploys the container, and returns a permanent URL like:
-`https://citymind-xxxx-uc.a.run.app`
-
-### Deploy from Cloud Shell (no local SDK needed)
-
-```bash
-git clone https://github.com/your-username/citymind.git
-cd citymind
-gcloud run deploy citymind --source . --region us-central1 --allow-unauthenticated --platform managed
-```
-
-### Run locally with Docker
-
-```bash
-docker build -t citymind .
-docker run -p 5050:8080 citymind
-```
-
-Then open **http://localhost:5050**.
-
----
-
 ## Configuration
 
 **`core/constants.py`** — grid and solver settings:
@@ -241,3 +203,8 @@ All endpoints are served by Flask at `http://localhost:5050`.
 | POST | `/api/flood` | Manually floods a cell — body: `{"x": 5, "y": 10}` |
 | POST | `/api/clear` | Clears all active floods and reroutes |
 | POST | `/api/reroute` | Re-runs A* on the current active route leg |
+
+---
+
+> **Live Demo** — prefer to try it without running anything locally?
+> [https://citymind-423918823518.us-central1.run.app](https://citymind-423918823518.us-central1.run.app)
