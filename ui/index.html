@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><title>CityMind — Urban Intelligence System</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#060b18;--panel:#0d1526;--border:rgba(255,255,255,.08);--accent:#6366f1;--text:#e2e8f0;--muted:#64748b;
+ --R:#22c55e;--I:#d97706;--S:#3b82f6;--W:#8b5cf6;--H:#ec4899;--D:#f97316}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+#hdr{display:flex;align-items:center;gap:10px;padding:8px 16px;background:rgba(13,21,38,.97);border-bottom:1px solid var(--border);flex-shrink:0}
+#hdr h1{font-size:15px;font-weight:700;background:linear-gradient(135deg,#6366f1,#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.badge{font-size:11px;font-family:'JetBrains Mono',monospace;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:6px;padding:3px 8px;color:#22d3ee}
+.sep{flex:1}
+.btn{padding:5px 12px;border-radius:7px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);font-size:12px;cursor:pointer;transition:all .2s}
+.btn:hover,.btn.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.red:hover,.btn.red.on{background:#ef4444;border-color:#ef4444}
+#body{display:flex;flex:1;overflow:hidden}
+#sb{width:165px;flex-shrink:0;background:var(--panel);border-right:1px solid var(--border);padding:10px;display:flex;flex-direction:column;gap:10px;overflow-y:auto}
+.sh{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.ob{display:flex;align-items:center;gap:7px;padding:6px 9px;border-radius:7px;border:1px solid var(--border);background:rgba(255,255,255,.03);cursor:pointer;font-size:12px;color:var(--muted);transition:all .2s;width:100%;text-align:left}
+.ob.on{border-color:var(--accent);color:var(--text);background:rgba(99,102,241,.12)}
+.dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.lr{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--muted);padding:2px 0}
+.ls{width:22px;height:4px;border-radius:2px;flex-shrink:0}
+.lsq{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.kv{display:flex;justify-content:space-between;font-size:12px;padding:2px 0}
+.kv .k{color:var(--muted)}.kv .v{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600}
+#ga{flex:1;display:flex;align-items:center;justify-content:center;padding:10px;overflow:hidden;position:relative}
+canvas{border-radius:8px;border:1px solid var(--border);cursor:crosshair;box-shadow:0 0 30px rgba(99,102,241,.12)}
+#rp{width:210px;flex-shrink:0;background:var(--panel);border-left:1px solid var(--border);display:flex;flex-direction:column}
+.rps{padding:10px;border-bottom:1px solid var(--border)}
+.rph{font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.rpill{padding:2px 7px;border-radius:20px;font-size:10px;font-weight:700}
+.rL{background:rgba(16,185,129,.2);color:#10b981}.rM{background:rgba(245,158,11,.2);color:#f59e0b}.rH{background:rgba(239,68,68,.2);color:#ef4444}
+#log{flex-shrink:0;height:120px;background:#050d1e;border-top:1px solid var(--border);overflow-y:auto;padding:6px 10px}
+.le{font-size:10px;font-family:'JetBrains Mono',monospace;padding:2px 0;display:flex;gap:6px;border-bottom:1px solid rgba(255,255,255,.03)}
+.ls2{color:var(--muted);min-width:44px}.lt{min-width:76px;font-weight:600}
+.ev-FLOOD{color:#ef4444}.ev-ROUTE{color:#60a5fa}.ev-RISK_UPDATE,.ev-RISK_INIT{color:#a78bfa}
+.ev-PLACEMENT,.ev-REPLANNING{color:#f59e0b}.ev-NO_EVENT{color:#475569}.ev-FLOOD_CLEAR{color:#10b981}.ev-NO_ROUTE{color:#f97316}.ev-REROUTE{color:#34d399}
+#ov{position:fixed;inset:0;background:rgba(6,11,24,.96);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:50}
+#ov h2{font-size:20px;font-weight:700;background:linear-gradient(135deg,#6366f1,#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+#ov p{color:var(--muted);font-size:13px}
+.sp{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#pb{width:240px;height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+#pf{height:100%;background:linear-gradient(90deg,#6366f1,#22d3ee);width:0%;transition:width .4s;border-radius:2px}
+</style>
+</head>
+<body>
+
+<div id="ov">
+  <div class="sp"></div>
+  <h2>CityMind AI System</h2>
+  <p id="lm">Initialising…</p>
+  <div id="pb"><div id="pf"></div></div>
+</div>
+
+<div id="hdr">
+  <h1>🏙 CityMind — Urban Intelligence</h1>
+  <span class="badge" id="sb2">Step 0 / 20</span>
+  <span class="badge" id="ph">Setup</span>
+  <div class="sep"></div>
+  <span style="font-size:11px;color:var(--muted);margin-right:2px">Grid</span>
+  <button class="btn gs on" data-size="40" onclick="setupSize(40,this)">40×40</button>
+  <button class="btn gs" data-size="30" onclick="setupSize(30,this)">30×30</button>
+  <button class="btn gs" data-size="20" onclick="setupSize(20,this)">20×20</button>
+  <button class="btn gs" data-size="10" onclick="setupSize(10,this)">10×10</button>
+  <div style="width:1px;height:20px;background:var(--border);margin:0 4px"></div>
+  <label style="font-size:11px;color:var(--muted)">Speed</label>
+  <input id="spd" type="range" min="300" max="3000" value="1200" step="100" style="width:80px;accent-color:#6366f1">
+  <button class="btn" id="bstep">⏭ Step</button>
+  <button class="btn on" id="bplay">⏸ Pause</button>
+  <button class="btn red" id="bflood">🌊 Flood</button>
+  <button class="btn" id="bclear">✕ Clear</button>
+  <button class="btn" id="breroute" title="Force A* reroute — works even after simulation ends">⟳ Reroute</button>
+</div>
+
+<div id="body">
+<div id="sb">
+  <div>
+    <div class="sh">Overlays</div>
+    <button class="ob on" onclick="tog('zones',this)"><span class="dot" style="background:#22c55e"></span>C1 Zones</button>
+    <button class="ob on" onclick="tog('mst',this)"><span class="dot" style="background:#475569"></span>C2 MST Roads</button>
+    <button class="ob on" onclick="tog('corridor',this)"><span class="dot" style="background:#22d3ee"></span>C2 Corridors</button>
+    <button class="ob on" onclick="tog('ambs',this)"><span class="dot" style="background:#f87171"></span>C3 Ambulances</button>
+    <button class="ob on" onclick="tog('routes',this)"><span class="dot" style="background:#60a5fa"></span>C4 Routes</button>
+    <button class="ob" onclick="tog('risk',this)"><span class="dot" style="background:#a78bfa"></span>C5 Risk Heat</button>
+  </div>
+  <div>
+    <div class="sh">Zone Legend</div>
+    <div class="lr"><span class="lsq" style="background:#ec4899"></span>Hospital</div>
+    <div class="lr"><span class="lsq" style="background:#22c55e"></span>Residential</div>
+    <div class="lr"><span class="lsq" style="background:#d97706"></span>Industrial</div>
+    <div class="lr"><span class="lsq" style="background:#3b82f6"></span>School</div>
+    <div class="lr"><span class="lsq" style="background:#8b5cf6"></span>Power Plant</div>
+    <div class="lr"><span class="lsq" style="background:#f97316"></span>Depot</div>
+  </div>
+  <div>
+    <div class="sh">Road Legend</div>
+    <div class="lr"><span class="ls" style="background:rgba(148,163,184,.25)"></span>MST Road</div>
+    <div class="lr"><span class="ls" style="background:#22d3ee"></span>Primary Route</div>
+    <div class="lr"><span class="ls" style="background:#f97316"></span>Backup Route</div>
+    <div class="lr"><span class="ls" style="background:#ef4444"></span>Flooded</div>
+    <div class="lr"><span class="ls" style="background:#38bdf8"></span>C4 Active Route</div>
+    <div class="lr"><span class="ls" style="background:rgba(100,116,139,.55)"></span>C4 Visited</div>
+    <div class="lr"><span class="ls" style="background:rgba(148,163,184,.25)"></span>C4 Queued</div>
+  </div>
+  <div>
+    <div class="sh">Risk Dist.</div>
+    <div class="kv"><span class="k">High</span><span class="v" id="rch" style="color:#ef4444">—</span></div>
+    <div class="kv"><span class="k">Medium</span><span class="v" id="rcm" style="color:#f59e0b">—</span></div>
+    <div class="kv"><span class="k">Low</span><span class="v" id="rcl" style="color:#10b981">—</span></div>
+  </div>
+</div>
+
+<div id="ga"><canvas id="cv"></canvas></div>
+
+<div id="rp">
+  <div class="rps">
+    <div class="rph">Selected Node</div>
+    <div class="kv"><span class="k">Coord</span><span class="v" id="nc">—</span></div>
+    <div class="kv"><span class="k">Zone</span><span class="v" id="nz">—</span></div>
+    <div class="kv"><span class="k">Population</span><span class="v" id="np">—</span></div>
+    <div class="kv"><span class="k">Risk</span><span id="nr">—</span></div>
+    <div class="kv"><span class="k">Multiplier</span><span class="v" id="nm">—</span></div>
+  </div>
+  <div class="rps">
+    <div class="rph">Challenge 2 — Roads</div>
+    <div class="kv"><span class="k">MST Edges</span><span class="v" id="a2e">—</span></div>
+    <div class="kv"><span class="k">Primary</span><span class="v" id="a2p" style="color:#22d3ee">—</span></div>
+    <div class="kv"><span class="k">Backup</span><span class="v" id="a2b" style="color:#f97316">—</span></div>
+  </div>
+  <div class="rps">
+    <div class="rph">Challenge 3 — Ambulances</div>
+    <div id="al" style="display:flex;flex-direction:column;gap:3px"></div>
+  </div>
+  <div class="rps" style="flex:1;overflow-y:auto">
+    <div class="rph">Challenge 4 — Active Routes</div>
+    <div id="rl" style="display:flex;flex-direction:column;gap:4px"></div>
+  </div>
+  <div class="rps">
+    <div class="rph">Challenge 5 — Risk</div>
+    <div class="kv"><span class="k">Flood Events</span><span class="v" id="af">0</span></div>
+  </div>
+</div>
+</div>
+
+<div id="log"><div id="le"></div></div>
+
+<script>
+const ZC={'R':'#22c55e','I':'#d97706','S':'#3b82f6','W':'#8b5cf6','H':'#ec4899','D':'#f97316'};
+const ZN={'R':'Residential','I':'Industrial','S':'School','W':'Power Plant','H':'Hospital','D':'Depot'};
+const RA={'Low':'rgba(16,185,129,.35)','Medium':'rgba(245,158,11,.4)','High':'rgba(239,68,68,.45)'};
+const RC=['#60a5fa','#34d399','#fbbf24'];
+const cv=document.getElementById('cv');
+const ctx=cv.getContext('2d');
+let G=40;  // updated dynamically on re-setup
+let S=null,gd=null,ov={zones:true,mst:true,corridor:true,ambs:true,routes:true,risk:false};
+let fm=false,playing=true,timer=null,af=0,mst=[],prim=[],back=[],seq=[];
+
+function cs(){return cv.width/G}
+
+function resize(){
+  const a=document.getElementById('ga');
+  const s=Math.min(a.clientWidth-20,a.clientHeight-20);
+  cv.width=cv.height=s;
+  draw();
+}
+window.addEventListener('resize',resize);
+
+async function setupSize(size, el){
+  document.querySelectorAll('.gs').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  playing=false;
+  clearTimeout(timer);
+  document.getElementById('bplay').textContent='▶ Play';
+  document.getElementById('bplay').classList.remove('on');
+  document.getElementById('ov').style.display='flex';
+  document.getElementById('lm').textContent=`Reinitialising ${size}×${size} grid…`;
+  document.getElementById('pf').style.width='0%';
+  const res = await fetch('/api/setup', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({size})
+  });
+  const s = await res.json();
+  G = s.grid_size || size;
+  gd = s.grid;
+  if(s.mst_edges) mst=s.mst_edges;
+  if(s.primary_route) prim=s.primary_route;
+  if(s.backup_route)  back=s.backup_route;
+  document.getElementById('pf').style.width='100%';
+  await new Promise(r=>setTimeout(r,300));
+  document.getElementById('ov').style.display='none';
+  resize(); upd(s);
+  await doStep();
+  playing=true;
+  document.getElementById('bplay').textContent='⏸ Pause';
+  document.getElementById('bplay').classList.add('on');
+  sched();
+}
+
+function tog(k,el){ov[k]=!ov[k];el.classList.toggle('on',ov[k]);draw();}
+
+function draw(){
+  if(!S&&!gd)return;
+  const c=cs();
+  ctx.clearRect(0,0,cv.width,cv.height);
+  ctx.fillStyle='#070e1f';ctx.fillRect(0,0,cv.width,cv.height);
+
+  if(ov.zones&&gd){
+    for(let y=0;y<G;y++)for(let x=0;x<G;x++){
+      const z=gd[y][x].zone;
+      ctx.fillStyle=ZC[z]||'#131f35';
+      ctx.fillRect(x*c+.5,y*c+.5,c-1,c-1);
+    }
+  }else{
+    ctx.fillStyle='#0d1526';ctx.fillRect(0,0,cv.width,cv.height);
+  }
+
+  if(ov.risk&&gd){
+    for(let y=0;y<G;y++)for(let x=0;x<G;x++){
+      const r=gd[y][x].risk;
+      if(r&&r!=='Low'){ctx.fillStyle=RA[r];ctx.fillRect(x*c,y*c,c,c);}
+    }
+  }
+
+  if(ov.mst&&mst.length){
+    ctx.save();
+    ctx.strokeStyle='rgba(148,163,184,.22)';ctx.lineWidth=.8;
+    mst.forEach(e=>{
+      const[ax,ay]=e.a,[bx,by]=e.b;
+      ctx.beginPath();ctx.moveTo(ax*c+c/2,ay*c+c/2);ctx.lineTo(bx*c+c/2,by*c+c/2);ctx.stroke();
+    });
+    ctx.restore();
+  }
+
+  if(ov.corridor){
+    drawPolyline(prim,'#22d3ee',2.5,false,false);
+    drawPolyline(back,'#f97316',2,true,false);
+  }
+
+  if(S&&S.floods.length){
+    const g=0.5+0.5*Math.sin(af*.14);
+    ctx.save();ctx.strokeStyle='#ef4444';ctx.lineWidth=3;
+    ctx.shadowColor='#ef4444';ctx.shadowBlur=8*g;
+    S.floods.forEach(([[ax,ay],[bx,by]])=>{
+      ctx.beginPath();ctx.moveTo(ax*c+c/2,ay*c+c/2);ctx.lineTo(bx*c+c/2,by*c+c/2);ctx.stroke();
+      ctx.fillStyle=`rgba(239,68,68,${.18+.14*g})`;
+      ctx.fillRect(ax*c,ay*c,c,c);ctx.fillRect(bx*c,by*c,c,c);
+    });
+    ctx.restore();
+  }
+
+  if(ov.routes&&seq&&seq.length){
+    const seqCols={completed:'rgba(100,116,139,.55)',active:'#38bdf8',pending:'rgba(148,163,184,.25)'};
+    const seqLW  ={completed:1,active:2.5,pending:1};
+    seq.forEach((leg,i)=>{
+      if(!leg.nodes||leg.nodes.length<2)return;
+      const st=leg.status||'pending';
+      const col=seqCols[st],lw=seqLW[st];
+      ctx.save();
+      ctx.strokeStyle=col;
+      ctx.lineWidth=lw;
+      if(st==='active'){
+        ctx.setLineDash([6,4]);
+        ctx.lineDashOffset=-(af%20);
+        ctx.shadowColor='#38bdf8';
+        ctx.shadowBlur=10;
+      } else if(st==='pending'){
+        ctx.setLineDash([3,6]);
+      } else {
+        ctx.setLineDash([4,4]);
+      }
+      ctx.beginPath();
+      leg.nodes.forEach(([x,y],j)=>{
+        if(j===0)ctx.moveTo(x*c+c/2,y*c+c/2);
+        else ctx.lineTo(x*c+c/2,y*c+c/2);
+      });
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+
+      const[dx,dy]=leg.dst;
+      const wCol=st==='completed'?'#475569':st==='active'?(leg.blocked?'#ef4444':'#38bdf8'):'rgba(148,163,184,.4)';
+      ctx.save();
+      ctx.fillStyle=wCol;
+      if(st==='active'){ctx.shadowColor=wCol;ctx.shadowBlur=8;}
+      ctx.beginPath();
+      ctx.arc(dx*c+c/2,dy*c+c/2,c*(st==='active'?.42:.28),0,Math.PI*2);
+      ctx.fill();
+      ctx.shadowBlur=0;
+      ctx.fillStyle=st==='completed'?'#94a3b8':'#fff';
+      ctx.font=`bold ${Math.max(7,c*.38)}px Inter`;
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(i+1,dx*c+c/2,dy*c+c/2);
+      ctx.restore();
+    });
+
+    if(S&&S.ambulances&&S.seq_team_amb!=null){
+      const[tx,ty]=S.ambulances[S.seq_team_amb]||[];
+      if(tx!=null){
+        const p=0.5+0.5*Math.sin(af*.12);
+        ctx.save();
+        ctx.strokeStyle='#38bdf8';ctx.lineWidth=2;
+        ctx.globalAlpha=.4+.4*p;
+        ctx.beginPath();ctx.arc(tx*c+c/2,ty*c+c/2,c*.65,0,Math.PI*2);ctx.stroke();
+        ctx.globalAlpha=1;
+        ctx.restore();
+      }
+    }
+  }
+
+  if(ov.ambs&&S){
+    const p=0.5+0.5*Math.sin(af*.1);
+    const acols=['#f87171','#fb923c','#fbbf24'];
+    (S.ambulances||[]).forEach(([x,y],i)=>{
+      const cx2=x*c+c/2,cy2=y*c+c/2,col=acols[i%3];
+      ctx.globalAlpha=.3+.4*p;ctx.strokeStyle=col;ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.arc(cx2,cy2,c*.52,0,Math.PI*2);ctx.stroke();
+      ctx.globalAlpha=1;
+      ctx.fillStyle=col;ctx.shadowColor=col;ctx.shadowBlur=6;
+      ctx.beginPath();ctx.arc(cx2,cy2,c*.3,0,Math.PI*2);ctx.fill();
+      ctx.shadowBlur=0;
+      ctx.fillStyle='#fff';ctx.font=`bold ${Math.max(7,c*.42)}px Inter`;
+      ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(i+1,cx2,cy2);
+    });
+  }
+
+  af++;
+  requestAnimationFrame(draw);
+}
+
+function drawPolyline(nodes,color,lw,dashed,glow){
+  if(!nodes||nodes.length<2)return;
+  const c=cs();
+  ctx.save();
+  ctx.strokeStyle=color;ctx.lineWidth=lw;
+  if(dashed){ctx.setLineDash([7,5]);ctx.lineDashOffset=-(af%22);}
+  if(glow){ctx.shadowColor=color;ctx.shadowBlur=8;}
+  ctx.beginPath();
+  nodes.forEach(([x,y],i)=>{
+    if(i===0)ctx.moveTo(x*c+c/2,y*c+c/2);
+    else ctx.lineTo(x*c+c/2,y*c+c/2);
+  });
+  ctx.stroke();
+  ctx.setLineDash([]);ctx.restore();
+  const[ex,ey]=nodes[nodes.length-1];
+  ctx.fillStyle=color;ctx.beginPath();
+  ctx.arc(ex*c+c/2,ey*c+c/2,c*.35,0,Math.PI*2);ctx.fill();
+}
+
+cv.addEventListener('mousemove',e=>{
+  if(!gd)return;
+  const r=cv.getBoundingClientRect(),c=cs();
+  const x=Math.floor((e.clientX-r.left)/c),y=Math.floor((e.clientY-r.top)/c);
+  if(x<0||y<0||x>=G||y>=G)return;
+  const cell=gd[y][x];
+  document.getElementById('nc').textContent=`(${x},${y})`;
+  document.getElementById('nz').textContent=ZN[cell.zone]||'—';
+  document.getElementById('np').textContent=(cell.pop||0).toLocaleString();
+  document.getElementById('nm').textContent=`×${(cell.mult||1).toFixed(2)}`;
+  const rr=document.getElementById('nr');
+  const rc={'Low':'rL','Medium':'rM','High':'rH'};
+  rr.innerHTML=`<span class="rpill ${rc[cell.risk]||''}">${cell.risk||'—'}</span>`;
+});
+
+cv.addEventListener('click',e=>{
+  if(!fm)return;
+  const r=cv.getBoundingClientRect(),c=cs();
+  const x=Math.floor((e.clientX-r.left)/c),y=Math.floor((e.clientY-r.top)/c);
+  if(x<0||y<0||x>=G||y>=G)return;
+  fetch('/api/flood',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({x,y})})
+    .then(r=>r.json()).then(upd);
+});
+
+document.getElementById('bflood').addEventListener('click',function(){
+  fm=!fm;this.classList.toggle('on',fm);
+});
+document.getElementById('bclear').addEventListener('click',()=>{
+  fetch('/api/clear',{method:'POST'}).then(r=>r.json()).then(upd);
+});
+document.getElementById('breroute').addEventListener('click', doReroute);
+
+async function doReroute(){
+  const btn=document.getElementById('breroute');
+  btn.textContent='⟳ Routing…';btn.disabled=true;
+  try{
+    const r=await fetch('/api/reroute',{method:'POST'});
+    if(!r.ok){
+      const err=await r.json().catch(()=>({error:'Server error '+r.status}));
+      console.error('Reroute failed:',err);
+      cv.style.borderColor='#ef4444';cv.style.boxShadow='0 0 18px #ef4444';
+      setTimeout(()=>{cv.style.borderColor='';cv.style.boxShadow='';},700);
+    } else {
+      const s=await r.json();
+      upd(s);
+      cv.style.borderColor='#34d399';cv.style.boxShadow='0 0 18px #34d399';
+      setTimeout(()=>{cv.style.borderColor='';cv.style.boxShadow='';},700);
+    }
+  } catch(e){
+    console.error('Reroute fetch error:',e);
+    cv.style.borderColor='#ef4444';cv.style.boxShadow='0 0 18px #ef4444';
+    setTimeout(()=>{cv.style.borderColor='';cv.style.boxShadow='';},700);
+  } finally {
+    btn.textContent='⟳ Reroute';btn.disabled=false;
+  }
+}
+document.getElementById('bstep').addEventListener('click',doStep);
+document.getElementById('bplay').addEventListener('click',function(){
+  playing=!playing;this.textContent=playing?'⏸ Pause':'▶ Play';
+  this.classList.toggle('on',playing);
+  if(playing)sched();else clearTimeout(timer);
+});
+
+function sched(){
+  if(!playing)return;
+  const spd=parseInt(document.getElementById('spd').value);
+  timer=setTimeout(()=>doStep().then(()=>sched()),spd);
+}
+async function doStep(){
+  if(!S||S.step>=S.max_steps){playing=false;return;}
+  const r=await fetch('/api/step',{method:'POST'});
+  upd(await r.json());
+}
+
+function upd(s){
+  S=s;
+  if(s.grid_size) G=s.grid_size;  // keep G in sync with server
+  document.getElementById('sb2').textContent=`Step ${s.step} / ${s.max_steps}`;
+  if(s.events&&s.events[0])document.getElementById('ph').textContent=s.events[0].event;
+  const rc=s.risk_counts||{};
+  document.getElementById('rch').textContent=rc.High||0;
+  document.getElementById('rcm').textContent=rc.Medium||0;
+  document.getElementById('rcl').textContent=rc.Low||0;
+  if(s.mst_edges){mst=s.mst_edges;document.getElementById('a2e').textContent=s.mst_edges.length;}
+  if(s.primary_route){prim=s.primary_route;document.getElementById('a2p').textContent=(s.primary_route.length-1)+'h';}
+  if(s.backup_route){back=s.backup_route;document.getElementById('a2b').textContent=(s.backup_route.length-1)+'h';}
+  if(s.sequential_route&&s.sequential_route.length){seq=s.sequential_route;}
+  const acols=['#f87171','#fb923c','#fbbf24'];
+  const al=document.getElementById('al');al.innerHTML='';
+  (s.ambulances||[]).forEach(([x,y],i)=>{
+    al.innerHTML+=`<div class="kv"><span class="k" style="color:${acols[i]}">Amb ${i+1}</span><span class="v">(${x},${y})</span></div>`;
+  });
+  const rl=document.getElementById('rl');rl.innerHTML='';
+  const legs=s.sequential_route||[];
+  const cur=s.seq_current_leg||0;
+  const stIcons={completed:'✓',active:'▶',pending:'·'};
+  const stCols ={completed:'#64748b',active:'#38bdf8',pending:'#475569'};
+  legs.forEach((leg,i)=>{
+    const st=leg.status||'pending';
+    const icon=stIcons[st];
+    const col=stCols[st];
+    const hops=leg.nodes&&leg.nodes.length>1?leg.nodes.length-1:0;
+    const detail=leg.blocked
+      ?'<span style="color:#ef4444">BLOCKED</span>'
+      :`<span style="color:${col}">${hops}h</span>`;
+    rl.innerHTML+=`<div class="kv"><span class="k" style="color:${col}">${icon} Leg${i+1} ${leg.zone}</span>${detail}</div>`;
+  });
+  if(legs.length){
+    const done=legs.filter(l=>l.status==='completed').length;
+    rl.innerHTML+=`<div class="kv" style="margin-top:4px"><span class="k">Progress</span><span class="v" style="color:#38bdf8">${done}/${legs.length}</span></div>`;
+  }
+  document.getElementById('af').textContent=(s.floods||[]).length;
+  const le=document.getElementById('le');
+  le.innerHTML=(s.events||[]).map(e=>
+    `<div class="le"><span class="ls2">S${String(e.step).padStart(2,'0')}</span><span class="lt ev-${e.event}">[${e.event}]</span><span>${e.detail}</span></div>`
+  ).join('');
+}
+
+const phases=['Solving CSP layout (Ch1)…','Building MST road network (Ch2)…','Running GA ambulance placement (Ch3)…','Predicting crime risk (Ch5)…','Ready!'];
+const prgs=[10,35,65,85,100];
+
+async function init(){
+  const pm=document.getElementById('lm'),pf=document.getElementById('pf');
+  for(let i=0;i<phases.length-1;i++){
+    pm.textContent=phases[i];pf.style.width=prgs[i]+'%';
+    await new Promise(r=>setTimeout(r,350));
+  }
+  const res=await fetch('/api/setup',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({size:40})});
+  const s=await res.json();
+  if(s.grid)gd=s.grid;
+  if(s.mst_edges)mst=s.mst_edges;
+  if(s.primary_route)prim=s.primary_route;
+  if(s.backup_route)back=s.backup_route;
+  pm.textContent=phases[4];pf.style.width='100%';
+  await new Promise(r=>setTimeout(r,500));
+  document.getElementById('ov').style.display='none';
+  resize();upd(s);
+  await doStep();
+  setInterval(async()=>{
+    const r=await fetch('/api/state?grid=true');
+    const ns=await r.json();
+    if(ns.ready&&ns.grid)gd=ns.grid;
+    if(ns.ready)S=ns;
+  },4000);
+  sched();
+}
+init();
+</script>
+</body>
+</html>
